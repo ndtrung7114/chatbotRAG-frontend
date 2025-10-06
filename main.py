@@ -6,22 +6,30 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.title("RAG Chatbot for PDFs")
 
-# File uploader
-uploaded_file = st.file_uploader("Upload a PDF", type="pdf")
+# File uploader with 6MB limit and help message
+uploaded_file = st.file_uploader(
+    "Upload a PDF",
+    type="pdf",
+    help="Upload a PDF file (maximum size: 6MB). Larger files cannot be processed due to CPU limitations on our free Hugging Face deployment."
+)
 
 if uploaded_file is not None:
-    if st.button("Process PDF"):
+    # Validate file size (6MB = 6 * 1024 * 1024 bytes)
+    file_size_mb = len(uploaded_file.getvalue()) / (1024 * 1024)
+    if file_size_mb > 6:
+        st.error("❌ The uploaded PDF exceeds the 6MB size limit. Please upload a smaller file.")
+    elif st.button("Process PDF"):
         with st.spinner("Processing your PDF..."):
             files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-            response = requests.post(f"{BACKEND_URL}/uploadfile/", files=files)  # Added trailing slash for upload
+            response = requests.post(f"{BACKEND_URL}/uploadfile/", files=files)
             if response.status_code == 200:
-                st.session_state.index_ready = True  # FIXED: Set ONLY on success
+                st.session_state.index_ready = True
                 st.success(f"✅ {response.json()['message']}")
             else:
-                st.session_state.index_ready = False  # Explicitly unset on error
+                st.session_state.index_ready = False
                 st.error(f"❌ {response.json().get('detail', 'Error processing PDF')}")
 
-# FIXED: Initialize session state
+# Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "index_ready" not in st.session_state:
@@ -44,7 +52,7 @@ if st.session_state.index_ready:
 
         with st.chat_message("assistant"):
             with st.spinner("Searching and answering..."):
-                response = requests.post(f"{BACKEND_URL}/query", json={"question": prompt})  # Matches fixed backend
+                response = requests.post(f"{BACKEND_URL}/query", json={"question": prompt})
                 if response.status_code == 200:
                     answer = response.json()["answer"]
                     st.markdown(answer)
