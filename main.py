@@ -6,11 +6,14 @@ BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.title("RAG Chatbot for PDFs")
 
-# File uploader with 6MB limit and help message
+# Display a prominent warning about the 6MB limit
+st.warning("⚠️ **Maximum PDF size: 6MB** due to CPU limitations on our free Hugging Face deployment. Files larger than 6MB will not be processed, even though the upload area may indicate a 200MB limit.")
+
+# File uploader with help message
 uploaded_file = st.file_uploader(
     "Upload a PDF",
     type="pdf",
-    help="Upload a PDF file (maximum size: 6MB). Larger files cannot be processed due to CPU limitations on our free Hugging Face deployment."
+    help="Upload a PDF file (maximum size: 6MB). Larger files cannot be processed due to CPU limitations."
 )
 
 if uploaded_file is not None:
